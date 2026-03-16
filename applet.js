@@ -9,6 +9,14 @@ const Util = imports.misc.util;
 
 const ProjectParser = require("./projectParser");
 
+/*
+TODO:
+1. If godot-command is non existant notify ONLY WHEN trying to launch a game.
+2. make sure only if file exists and is named projects.cfg -> only then
+   monitor the file.
+3. remove the file:// ONLY IF IT'S THERE.
+*/
+
 class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
     constructor(projectPath, isFavorite, show_icon, show_path, params) {
         super(params);
@@ -95,8 +103,8 @@ class GodotProjects extends Applet.IconApplet {
                                    this.on_settings_changed,
                                    null);
         this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "godot-path",
-                                   "godot_path",
+                                   "godot-command",
+                                   "godot_command",
                                    this.on_settings_changed,
                                    null);
         this.settings.bindProperty(Settings.BindingDirection.IN,
@@ -104,18 +112,46 @@ class GodotProjects extends Applet.IconApplet {
                                    "godot_flags",
                                    this.on_settings_changed,
                                    null);
-        
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "custom-projects-path",
+                                   "custom_projects_path",
+                                   this.on_settings_changed,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "projects-file",
+                                   "projects_file",
+                                   this.on_settings_changed,
+                                   null);
+   
         this._projectButtons = [];
 
-        this.projectPath = GLib.build_filenamev([
+        this.defaultProjectPath = GLib.build_filenamev([
             GLib.get_home_dir(),
             ".local",
             "share",
             "godot",
             "projects.cfg"
         ]);
-        // TODO: Move to func:
+
+        this.projectFileMonitor = null;
+        this._refreshProjectsFile();
+        this._refreshProjects();
+    }
+
+    _modifyAndMonitorProjectsFile(path) {
+        this.projectPath = path;
         this.projectFile = Gio.File.new_for_path(this.projectPath);
+
+        if (!this.projectFile.query_exists(null)){
+            global.log("Warning: Couldn't monitor projects file because it doesn't exist, please modify the applet's config!");
+            return;
+        }
+
+        // Disable previous monitor if it exists
+        if (this.projectFileMonitor) {
+            this.projectFileMonitor.cancel();
+        }
+
         this.projectFileMonitor = this.projectFile.monitor_file(
             Gio.FileMonitorFlags.NONE,
             null
@@ -123,9 +159,17 @@ class GodotProjects extends Applet.IconApplet {
         this.projectFileMonitor.connect("changed", () => {
             this._refreshProjects();
         });
-        this._refreshProjects();
     }
-    
+
+    _refreshProjectsFile() {
+        if (this.custom_projects_path && this.projects_file) {
+            this._modifyAndMonitorProjectsFile(this.projects_file);
+        }
+        else {
+            this._modifyAndMonitorProjectsFile(this.defaultProjectPath);
+        }
+    }
+
     _refreshProjects() {
         for (let projectButton of this._projectButtons) {
             projectButton.destroy();
@@ -149,8 +193,8 @@ class GodotProjects extends Applet.IconApplet {
                 );
                 
                 button.connect("activate", (button, event)=> {
-                    let command_arr = [this.godot_path].concat(this.godot_flags.split(" ")).concat([project]);
-                    Util.spawn_async(command_arr);
+                    let command_arr = this.godot_command + " " + this.godot_flags + " " + project;
+                    Util.spawnCommandLineAsync(command_arr);
                     this.menu.toggle();
                 });
         
@@ -161,6 +205,7 @@ class GodotProjects extends Applet.IconApplet {
     }
 
     on_settings_changed() {
+        this._refreshProjectsFile();
         this._refreshProjects();
     }
 
