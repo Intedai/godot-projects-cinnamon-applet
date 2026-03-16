@@ -13,14 +13,28 @@
         "default": true,
         "description": "Show Star Icons Near Project"
     },
-    "godot-path": {
+    "godot-command": {
         "type": "entry",
         "default": "godot",
-        "description": "Godot path"
+        "description": "Godot Command",
+        "tooltip": "For example: godot, flatpak run org.godotengine.Godot or a path to an executable"
     },
     "godot-flags": {
         "type": "entry",
         "default": "--editor --path",
         "description": "Godot flags"
+    },
+    "custom-projects-path": {
+        "type": "switch",
+        "default": false,
+        "description": "Use a custom path for projects.cfg",
+        "tooltip": "Usually for a Flatpak"
+    },
+    "projects-file": {
+        "type": "filechooser",
+        "default": "~",
+        "dependency": "custom-projects-path=true",
+        "description": "Choose your projects.cfg file",
+        "tooltip": "~/.local/share/godot/project.cfg or for flatpak ~/.var/app/org.godotengine.Godot/data/godot usually"
     }
 }
