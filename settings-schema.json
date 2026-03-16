@@ -1,0 +1,26 @@
+{
+    "head": {
+        "type": "header",
+        "description": "Godot Projects Applet Settings"    
+    },
+    "show-full-path": {
+        "type": "switch",
+        "default": false,
+        "description": "Show Full Path Instead Of Project Name"
+    },
+    "show-star-icons": {
+        "type": "switch",
+        "default": true,
+        "description": "Show Star Icons Near Project"
+    },
+    "godot-path": {
+        "type": "entry",
+        "default": "godot",
+        "description": "Godot path"
+    },
+    "godot-flags": {
+        "type": "entry",
+        "default": "--editor --path",
+        "description": "Godot flags"
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "uuid": "godot-projects@intedai.dev",
+    "name": "Godot Projects",
+    "description": "Launch your Godot projects from an applet.",
+    "icon": "godot",
+    "max-instances": "-1"
+}
