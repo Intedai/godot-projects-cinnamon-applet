@@ -30,7 +30,7 @@
         "description": "Use a custom path for projects.cfg",
         "tooltip": "Usually for a Flatpak"
     },
-    "projects-file": {
+    "projects-file-uri": {
         "type": "filechooser",
         "default": "",
         "dependency": "custom-projects-path=true",

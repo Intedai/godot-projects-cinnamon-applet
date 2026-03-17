@@ -14,7 +14,6 @@ TODO:
 1. If godot-command is non existant notify ONLY WHEN trying to launch a game.
 2. make sure only if file exists and is named projects.cfg -> only then
    monitor the file.
-3. change this.projects_file to this.project_file_uri
 4. change get_project_list(path) to get_project_list(file)
 5. check if default file exists
 6. async baby
@@ -121,8 +120,8 @@ class GodotProjects extends Applet.IconApplet {
                                    this.on_settings_changed,
                                    null);
         this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "projects-file",
-                                   "projects_file",
+                                   "projects-file-uri",
+                                   "projects_file_uri",
                                    this.on_settings_changed,
                                    null);
    
@@ -165,9 +164,9 @@ class GodotProjects extends Applet.IconApplet {
     }
 
     _refreshProjectsFile() {
-        if (this.custom_projects_path && this.projects_file) {
-            const projects_file = Gio.File.new_for_uri(this.projects_file);
-            this._modifyAndMonitorProjectsFile(projects_file.get_path());
+        if (this.custom_projects_path && this.projects_file_uri) {
+            const projects_file_uri = Gio.File.new_for_uri(this.projects_file_uri);
+            this._modifyAndMonitorProjectsFile(projects_file_uri.get_path());
         }
         else {
             this._modifyAndMonitorProjectsFile(this.defaultProjectPath);
