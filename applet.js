@@ -6,6 +6,7 @@ const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 const Util = imports.misc.util;
+const Main = imports.ui.main;
 
 const ProjectParser = require("./projectParser");
 
@@ -36,7 +37,7 @@ class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
             displayText = projectPath;
         }
         else {
-            let projectName = ProjectParser.getProjectName(projectPath);
+            let projectName = ProjectParser.getProjectName(projectPath, this.appletName);
 
             if (projectName) {
                 displayText = projectName
@@ -70,6 +71,7 @@ class GodotProjects extends Applet.IconApplet {
     constructor(metadata, orientation, panel_height, instance_id) {
         super(orientation, panel_height, instance_id);
 
+        this.appletName = "Godot Projects";
         this.set_applet_icon_name("godot-applet-icon");
         this.set_applet_tooltip(_("Project List"));
 
@@ -126,15 +128,18 @@ class GodotProjects extends Applet.IconApplet {
                                    null);
    
         this._projectButtons = [];
-
+        
+        this.projectsFileName = "projects.cfg"
         this.defaultProjectPath = GLib.build_filenamev([
             GLib.get_home_dir(),
             ".local",
             "share",
             "godot",
-            "projects.cfg"
+            this.projectsFileName
         ]);
 
+        this.defaultProjectFile = Gio.File.new_for_path(this.defaultProjectPath);
+    
         this.projectFileMonitor = null;
         this._refreshProjectsFile();
         this._refreshProjects();
@@ -166,14 +171,21 @@ class GodotProjects extends Applet.IconApplet {
     _refreshProjectsFile() {
         if (
             this.custom_projects_path &&
-            this.projects_file_uri &&
-            this.projects_file_uri.slice(-1 * "projects.cfg".length) === "projects.cfg"
+            this.projects_file_uri
         ) {
-            const projectsFileURI = Gio.File.new_for_uri(this.projects_file_uri);
-            this._modifyAndMonitorProjectsFile(projectsFileURI.get_path());
+            const projectsFile = Gio.File.new_for_uri(this.projects_file_uri);
+            if (projectsFile.get_basename() === this.projectsFileName) {
+                this._modifyAndMonitorProjectsFile(projectsFile.get_path());
+            }
+            else {
+                Main.notify(this.appletName, "File must be named " + this.projectsFileName + ", choose another file!");
+            }
+        }
+        else if (this.defaultProjectFile.query_exists(null)){
+            this._modifyAndMonitorProjectsFile(this.defaultProjectPath);
         }
         else {
-            this._modifyAndMonitorProjectsFile(this.defaultProjectPath);
+            Main.notify(this.appletName, "Couldn't find the default projects.cfg file, choose a file in the settings!");
         }
     }
 
@@ -183,7 +195,7 @@ class GodotProjects extends Applet.IconApplet {
         }
         this._projectButtons = [];
 
-        let projects = ProjectParser.getProjectList(this.projectPath);
+        let projects = ProjectParser.getProjectList(this.projectPath, this.appletName);
         
         if (!projects) {
             return;

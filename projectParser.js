@@ -3,12 +3,12 @@ const Gio = imports.gi.Gio;
 const Main = imports.ui.main;
 
 // TODO: Maybe take file instead, since i create in ctor for monitoring
-function getProjectList(path) {
+function getProjectList(path, appletName) {
     const projectsFile = Gio.File.new_for_path(path);
     if (!projectsFile.query_exists(null)){
         let msg = "Path for projects config file doesn't exist!: " + path;
-        Main.notify("Invalid Path", msg);
-        global.log("Warning: " + msg);
+        Main.notify(appletName, msg);
+        global.log(appletName + ": " + msg);
         return null;
     }
     
@@ -35,22 +35,28 @@ function getProjectList(path) {
         }
     }
     catch (e) {
+
+        Main.notify(
+            appletName,
+            "Failed to parse projects file: " +
+            projectsFile.get_basename() +
+            " try choosing another file in the settings or look at the logs!"
+        );
         global.logError(e);
-        Main.notify("Error:", e.message);
         return null;
     }
 
     return projects;
 }
 
-function getProjectName(projectPath) {
+function getProjectName(projectPath, appletName) {
 
     const projectConfigPath = GLib.build_filenamev([projectPath, "project.godot"]);
     const projectConfigFile = Gio.File.new_for_path(projectConfigPath);
 
     if (!projectConfigFile.query_exists(null)){
         // Not notifying to avoid annoying spam
-        global.log("Warning: Couldn't fetch project name for " + projectPath);
+        global.log(appletName + ": Couldn't fetch project name for " + projectPath);
         return null;
     }
 
@@ -70,9 +76,15 @@ function getProjectName(projectPath) {
 
     try {
         keyFile.load_from_data(applicationGroupText, applicationGroupText.length, GLib.KeyFileFlags.NONE);
-        projectName = keyFile.get_value("application", "config/name");
+        projectName = keyFile.get_string("application", "config/name");
     }
     catch (e) {
+        Main.notify(
+            appletName,
+            "Failed to parse projects file: " +
+            projectConfigFile.get_basename() +
+            " try choosing another file in the settings or look at the logs!"
+        );
         global.logError(e);
         return null;
     }
