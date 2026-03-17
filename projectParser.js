@@ -3,7 +3,7 @@ const Gio = imports.gi.Gio;
 const Main = imports.ui.main;
 
 // TODO: Maybe take file instead, since i create in ctor for monitoring
-function get_project_list(path) {
+function getProjectList(path) {
     const projectsFile = Gio.File.new_for_path(path);
     if (!projectsFile.query_exists(null)){
         let msg = "Path for projects config file doesn't exist!: " + path;
@@ -17,7 +17,7 @@ function get_project_list(path) {
 
     let projects = {
         favorites: [],
-        non_favorites: []
+        nonFavorites: []
     };
 
     try {
@@ -30,7 +30,7 @@ function get_project_list(path) {
                 projects.favorites.push(group);
             }
             else {
-                projects.non_favorites.push(group);
+                projects.nonFavorites.push(group);
             }
         }
     }
@@ -43,14 +43,14 @@ function get_project_list(path) {
     return projects;
 }
 
-function get_project_name(project_path) {
+function getProjectName(projectPath) {
 
-    const projectConfigPath = GLib.build_filenamev([project_path, "project.godot"]);
+    const projectConfigPath = GLib.build_filenamev([projectPath, "project.godot"]);
     const projectConfigFile = Gio.File.new_for_path(projectConfigPath);
 
     if (!projectConfigFile.query_exists(null)){
         // Not notifying to avoid annoying spam
-        global.log("Warning: Couldn't fetch project name for " + project_path);
+        global.log("Warning: Couldn't fetch project name for " + projectPath);
         return null;
     }
 
