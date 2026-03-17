@@ -14,13 +14,13 @@ TODO:
 1. If godot-command is non existant notify ONLY WHEN trying to launch a game.
 2. make sure only if file exists and is named projects.cfg -> only then
    monitor the file.
-4. change get_project_list(path) to get_project_list(file)
+4. change getProjectList(path) to getProjectList(file)
 5. check if default file exists
 6. async baby
 */
 
 class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
-    constructor(projectPath, isFavorite, show_icon, show_path, params) {
+    constructor(projectPath, isFavorite, showIcon, showPath, params) {
         super(params);
 
         this.box = new St.BoxLayout({
@@ -32,11 +32,11 @@ class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
 
         let displayText;
 
-        if (show_path) {
+        if (showPath) {
             displayText = projectPath;
         }
         else {
-            let projectName = ProjectParser.get_project_name(projectPath);
+            let projectName = ProjectParser.getProjectName(projectPath);
 
             if (projectName) {
                 displayText = projectName
@@ -47,7 +47,7 @@ class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
             }
         }
 
-        if (show_icon) {
+        if (showIcon) {
             let icon = new St.Icon({
                 icon_name: isFavorite ? 'starred-symbolic' : 'non-starred-symbolic',
                 style_class: 'system-status-icon',
@@ -169,8 +169,8 @@ class GodotProjects extends Applet.IconApplet {
             this.projects_file_uri &&
             this.projects_file_uri.slice(-1 * "projects.cfg".length) === "projects.cfg"
         ) {
-            const projects_file_uri = Gio.File.new_for_uri(this.projects_file_uri);
-            this._modifyAndMonitorProjectsFile(projects_file_uri.get_path());
+            const projectsFileURI = Gio.File.new_for_uri(this.projects_file_uri);
+            this._modifyAndMonitorProjectsFile(projectsFileURI.get_path());
         }
         else {
             this._modifyAndMonitorProjectsFile(this.defaultProjectPath);
@@ -183,13 +183,13 @@ class GodotProjects extends Applet.IconApplet {
         }
         this._projectButtons = [];
 
-        let projects = ProjectParser.get_project_list(this.projectPath);
+        let projects = ProjectParser.getProjectList(this.projectPath);
         
         if (!projects) {
             return;
         }
 
-        for (const key of ["favorites", "non_favorites"]) {
+        for (const key of ["favorites", "nonFavorites"]) {
             const isFavorite = key == "favorites";
             for (const project of projects[key]) {
                 let button = new ProjectMenuItem(
