@@ -164,7 +164,11 @@ class GodotProjects extends Applet.IconApplet {
     }
 
     _refreshProjectsFile() {
-        if (this.custom_projects_path && this.projects_file_uri) {
+        if (
+            this.custom_projects_path &&
+            this.projects_file_uri &&
+            this.projects_file_uri.slice(-1 * "projects.cfg".length) === "projects.cfg"
+        ) {
             const projects_file_uri = Gio.File.new_for_uri(this.projects_file_uri);
             this._modifyAndMonitorProjectsFile(projects_file_uri.get_path());
         }
