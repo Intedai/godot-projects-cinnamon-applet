@@ -6,7 +6,7 @@ const Main = imports.ui.main;
 function get_project_list(path) {
     const projectsFile = Gio.File.new_for_path(path);
     if (!projectsFile.query_exists(null)){
-        let msg = "Path for projects config file doesn't exist!";
+        let msg = "Path for projects config file doesn't exist!: " + path;
         Main.notify("Invalid Path", msg);
         global.log("Warning: " + msg);
         return null;

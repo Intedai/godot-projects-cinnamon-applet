@@ -17,7 +17,7 @@
         "type": "entry",
         "default": "godot",
         "description": "Godot Command",
-        "tooltip": "For example: godot, flatpak run org.godotengine.Godot or a path to an executable"
+        "tooltip": "For example: godot, flatpak run org.godotengine.Godot or ./{EXECUTABLE PATH}"
     },
     "godot-flags": {
         "type": "entry",
