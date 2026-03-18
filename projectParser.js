@@ -7,8 +7,8 @@ function getProjectList(path, appletName) {
     const projectsFile = Gio.File.new_for_path(path);
     if (!projectsFile.query_exists(null)){
         let msg = "Path for projects config file doesn't exist!: " + path;
-        Main.notify(appletName, msg);
-        global.log(appletName + ": " + msg);
+        Main.notifyError(appletName, msg);
+        global.logError(appletName + ": " + msg);
         return null;
     }
     
@@ -36,7 +36,7 @@ function getProjectList(path, appletName) {
     }
     catch (e) {
 
-        Main.notify(
+        Main.notifyError(
             appletName,
             "Failed to parse projects file: " +
             projectsFile.get_basename() +
@@ -67,6 +67,7 @@ function getProjectName(projectPath, appletName) {
 
     const applicationGroupRegex = /(\[application].+?)\[/s;
 
+    // Get only the group with project name, and make it KeyFile compatible (kinda hacky but whatever)
     const applicationGroupText = contentsString
         .match(applicationGroupRegex)[1] // Get the brackets only, not including last '['
         .replace(';', '#'); // Replace comment char from ; to # so KeyFile parsing will work 
@@ -79,7 +80,7 @@ function getProjectName(projectPath, appletName) {
         projectName = keyFile.get_string("application", "config/name");
     }
     catch (e) {
-        Main.notify(
+        Main.notifyError(
             appletName,
             "Failed to parse projects file: " +
             projectConfigFile.get_basename() +
