@@ -3,8 +3,7 @@ const Gio = imports.gi.Gio;
 const Main = imports.ui.main;
 
 // TODO: Maybe take file instead, since i create in ctor for monitoring
-function getProjectList(path, appletName) {
-    const projectsFile = Gio.File.new_for_path(path);
+function getProjectList(projectsFile, appletName) {
     if (!projectsFile.query_exists(null)){
         let msg = "Path for projects config file doesn't exist!: " + path;
         Main.notifyError(appletName, msg);

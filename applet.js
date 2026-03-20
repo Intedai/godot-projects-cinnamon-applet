@@ -14,11 +14,10 @@ const ProjectParser = require("./projectParser");
 TODO:
 REMINDER: do cinnamon --replace to view better errors!
 CHECK IF NO MULTIPLE NOTIFS
-1. change getProjecxtList(path) to getProjxectList(file)
-2. check variable names inconsistencies like projectFile and projectsFile across both classes and individually inside each class also projectParser.js
-3. fix when u write an unexistant command it just doesn't do anything, maybe use spawnCommandLineAsyncIO instead
-4. async baby
-5. add switch / option thingy to choose if to use normal or symbolic icon in taskbarr applet icon
+1. check variable names inconsistencies like projectFile and projectsFile across both classes and individually inside each class also projectParser.js
+2. fix when u write an unexistant command it just doesn't do anything, maybe use spawnCommandLineAsyncIO instead
+3. async baby
+4. add switch / option thingy to choose if to use normal or symbolic icon in taskbarr applet icon
 */
 
 class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
@@ -144,7 +143,8 @@ class GodotProjects extends Applet.IconApplet {
         this.MenuItems = [];
         
         this.projectsFileName = "projects.cfg"
-        this.defaultProjectPath = GLib.build_filenamev([
+        
+        const defaultProjectPath = GLib.build_filenamev([
             GLib.get_home_dir(),
             ".local",
             "share",
@@ -152,9 +152,9 @@ class GodotProjects extends Applet.IconApplet {
             this.projectsFileName
         ]);
 
-        this.defaultProjectFile = Gio.File.new_for_path(this.defaultProjectPath);
+        this.defaultProjectFile = Gio.File.new_for_path(defaultProjectPath);
         
-        this.projectPath = null;
+        this.projectFile = null;
 
         this.projectFileMonitor = null;
 
@@ -164,9 +164,9 @@ class GodotProjects extends Applet.IconApplet {
         this.refreshAll();
     }
 
-    _modifyAndMonitorProjectsFile(path) {
-        this.projectPath = path;
-        this.projectFile = Gio.File.new_for_path(this.projectPath);
+    _modifyAndMonitorProjectsFile(projectFile) {
+        this.projectFile = projectFile
+        this._stopMonitoringCompletely();
         
         // Shouldn't happen but just incase
         if (!this.projectFile.query_exists(null)){
@@ -183,7 +183,6 @@ class GodotProjects extends Applet.IconApplet {
             return;
         }
         
-        this._stopMonitoringCompletely();
 
         this.projectFileMonitor = this.projectFile.monitor_file(
             Gio.FileMonitorFlags.NONE,
@@ -214,10 +213,10 @@ class GodotProjects extends Applet.IconApplet {
         ) {
             const projectsFile = Gio.File.new_for_uri(this.projects_file_uri);
             if (projectsFile.get_basename() === this.projectsFileName) {
-                this._modifyAndMonitorProjectsFile(projectsFile.get_path());
+                this._modifyAndMonitorProjectsFile(projectsFile);
             }
             else {
-                this.projectPath = null;
+                this.projectFile = null;
                 this.showProjectsInPopup = false;
                 this._stopMonitoringCompletely();
                 let msg = "File must be named " + this.projectsFileName + ", choose another file!";
@@ -227,17 +226,17 @@ class GodotProjects extends Applet.IconApplet {
         }
         // Switched on but no file chosen
         else if (this.custom_projects_path) {
-            this.projectPath = null;
+            this.projectFile = null;
             this.showProjectsInPopup = false;
             this.badMessage("Please select a file in the settings!");
             this._stopMonitoringCompletely();
         }
         else if (this.defaultProjectFile.query_exists(null)){
-            this._modifyAndMonitorProjectsFile(this.defaultProjectPath);
+            this._modifyAndMonitorProjectsFile(this.defaultProjectFile);
         }
         // Couldn't find the default file
         else {
-            this.projectPath = null;
+            this.projectFile = null;
             this.showProjectsInPopup = false;
             this._stopMonitoringCompletely();
 
@@ -249,11 +248,11 @@ class GodotProjects extends Applet.IconApplet {
     }
 
     refreshProjects() {
-        if (!this.showProjectsInPopup || !this.projectPath) {
+        if (!this.showProjectsInPopup || !this.projectFile) {
             return;
         }
 
-        let projects = ProjectParser.getProjectList(this.projectPath, this.appletName);
+        let projects = ProjectParser.getProjectList(this.projectFile, this.appletName);
         
         if (!projects) {
             this.showProjectsInPopup = false;
@@ -268,7 +267,7 @@ class GodotProjects extends Applet.IconApplet {
                 Not disabling this.showProjectsInPopup because the file
                 was parsed successfully, just no project exists yet!
             */
-            this.badMessage("You don't have any projects yet!");
+            this.badMessage("You don't have any projects yet.");
             return;
         }
 
