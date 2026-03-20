@@ -12,9 +12,13 @@ const ProjectParser = require("./projectParser");
 
 /*
 TODO:
-4. change getProjectList(path) to getProjectList(file)
-6. async baby
-7. if 0 projects add text to show No Projects Found!
+REMINDER: do cinnamon --replace to view better errors!
+CHECK IF NO MULTIPLE NOTIFS
+1. change getProjecxtList(path) to getProjxectList(file)
+2. check variable names inconsistencies like projectFile and projectsFile across both classes and individually inside each class also projectParser.js
+3. fix when u write an unexistant command it just doesn't do anything, maybe use spawnCommandLineAsyncIO instead
+4. async baby
+5. add switch / option thingy to choose if to use normal or symbolic icon in taskbarr applet icon
 */
 
 class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
@@ -64,6 +68,19 @@ class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
     }
 }
 
+class badMessageMenuItem extends PopupMenu.PopupBaseMenuItem {
+    constructor(displayText) {
+        super({reactive: false});
+        
+        let label = new St.Label({
+            text: displayText,
+            y_align: Clutter.ActorAlign.CENTER
+        });
+
+        this.addActor(label);
+    }
+}
+
 class GodotProjects extends Applet.IconApplet {
     constructor(metadata, orientation, panel_height, instance_id) {
         super(orientation, panel_height, instance_id);
@@ -87,8 +104,8 @@ class GodotProjects extends Applet.IconApplet {
         this.projectsScrollBox.set_auto_scrolling(true);
         this.mainContainer.add(this.projectsScrollBox);
 
-        this.projectsBox = new St.BoxLayout({vertical: true});
-        this.projectsScrollBox.add_actor(this.projectsBox);
+        this.menuBox = new St.BoxLayout({vertical: true});
+        this.projectsScrollBox.add_actor(this.menuBox);
         this.projectsScrollBox.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
         this.projectsScrollBox.add_style_class_name("vfade");
         
@@ -124,7 +141,7 @@ class GodotProjects extends Applet.IconApplet {
                                    this.refreshAll,
                                    null);
    
-        this._projectButtons = [];
+        this.MenuItems = [];
         
         this.projectsFileName = "projects.cfg"
         this.defaultProjectPath = GLib.build_filenamev([
@@ -136,35 +153,61 @@ class GodotProjects extends Applet.IconApplet {
         ]);
 
         this.defaultProjectFile = Gio.File.new_for_path(this.defaultProjectPath);
-    
+        
+        this.projectPath = null;
+
         this.projectFileMonitor = null;
+
+        // Signal handler ID, used for disconnecting the signal
+        this.projects_id = 0;
+
         this.refreshAll();
     }
 
     _modifyAndMonitorProjectsFile(path) {
         this.projectPath = path;
         this.projectFile = Gio.File.new_for_path(this.projectPath);
-
+        
+        // Shouldn't happen but just incase
         if (!this.projectFile.query_exists(null)){
-            global.log("Warning: Couldn't monitor projects file because it doesn't exist, please modify the applet's config!");
+            let msg = "Couldn't monitor projects file because it doesn't exist, please modify the applet's config or look at the logs!";
+            Main.notifyError(this.appletName, msg)
+            global.logError(
+                this.appletName +
+                ": File " +
+                this.projectFile.path() +
+                " doesn't exist!"
+            );
+            this.showProjectsInPopup = false;
+            this.badMessage(msg);
             return;
         }
-
-        // Disable previous monitor if it exists
-        if (this.projectFileMonitor) {
-            this.projectFileMonitor.cancel();
-        }
+        
+        this._stopMonitoringCompletely();
 
         this.projectFileMonitor = this.projectFile.monitor_file(
             Gio.FileMonitorFlags.NONE,
             null
         );
-        this.projectFileMonitor.connect("changed", () => {
+        this.projects_id = this.projectFileMonitor.connect("changed", () => {
             this.refreshProjects();
         });
     }
 
+    _stopMonitoringCompletely() {
+        if (this.projectFileMonitor) {
+            if (this.projects_id > 0) {
+                this.projectFileMonitor.disconnect(this.projects_id);
+                this.projects_id = 0;
+            }
+            this.projectFileMonitor.cancel();
+            this.projectFileMonitor = null;
+        }
+    }
+
     refreshProjectsFile() {
+        this.showProjectsInPopup = true;
+
         if (
             this.custom_projects_path &&
             this.projects_file_uri
@@ -174,28 +217,66 @@ class GodotProjects extends Applet.IconApplet {
                 this._modifyAndMonitorProjectsFile(projectsFile.get_path());
             }
             else {
-                Main.notify(this.appletName, "File must be named " + this.projectsFileName + ", choose another file!");
+                this.projectPath = null;
+                this.showProjectsInPopup = false;
+                this._stopMonitoringCompletely();
+                let msg = "File must be named " + this.projectsFileName + ", choose another file!";
+                Main.notify(this.appletName, msg);
+                this.badMessage(msg);
             }
+        }
+        // Switched on but no file chosen
+        else if (this.custom_projects_path) {
+            this.projectPath = null;
+            this.showProjectsInPopup = false;
+            this.badMessage("Please select a file in the settings!");
+            this._stopMonitoringCompletely();
         }
         else if (this.defaultProjectFile.query_exists(null)){
             this._modifyAndMonitorProjectsFile(this.defaultProjectPath);
         }
+        // Couldn't find the default file
         else {
-            Main.notify(this.appletName, "Couldn't find the default projects.cfg file, choose a file in the settings!");
+            this.projectPath = null;
+            this.showProjectsInPopup = false;
+            this._stopMonitoringCompletely();
+
+            let msg = "Couldn't find the default projects.cfg file, choose a file in the settings!";
+
+            Main.notify(this.appletName, msg);
+            this.badMessage(msg);
         }
     }
 
     refreshProjects() {
-        for (let projectButton of this._projectButtons) {
-            projectButton.destroy();
+        if (!this.showProjectsInPopup || !this.projectPath) {
+            return;
         }
-        this._projectButtons = [];
 
         let projects = ProjectParser.getProjectList(this.projectPath, this.appletName);
         
         if (!projects) {
+            this.showProjectsInPopup = false;
+            this.badMessage("Failed to parse projects file!");
             return;
         }
+        else if (
+            projects.favorites.length == 0 &&
+            projects.nonFavorites.length == 0
+        ) {
+            /*
+                Not disabling this.showProjectsInPopup because the file
+                was parsed successfully, just no project exists yet!
+            */
+            this.badMessage("You don't have any projects yet!");
+            return;
+        }
+
+        for (let projectButton of this.MenuItems) {
+            projectButton.destroy();
+        }
+        this.MenuItems = [];
+
 
         for (const key of ["favorites", "nonFavorites"]) {
             const isFavorite = key == "favorites";
@@ -208,6 +289,7 @@ class GodotProjects extends Applet.IconApplet {
                 );
                 
                 button.connect("activate", (button, event)=> {
+                    global.log("yolobutn");
                     let command_arr = this.godot_command + " " + this.godot_flags + " " + project;
                     Util.spawnCommandLineAsync(
                         command_arr, null, () => {
@@ -222,10 +304,22 @@ class GodotProjects extends Applet.IconApplet {
                     this.menu.toggle();
                 });
         
-                this._projectButtons.push(button);
-                this.projectsBox.add_child(button.actor);
+                this.MenuItems.push(button);
+                this.menuBox.add_child(button.actor);
             }
         }
+    }
+
+    badMessage(displayText) {
+        for (let projectButton of this.MenuItems) {
+            projectButton.destroy();
+        }
+        this.MenuItems = [];
+        
+        let badMessageItem = new badMessageMenuItem(displayText);
+
+        this.MenuItems.push(badMessageItem);
+        this.menuBox.add_child(badMessageItem.actor);
     }
 
     refreshAll() {
@@ -235,6 +329,22 @@ class GodotProjects extends Applet.IconApplet {
 
     on_applet_clicked() {
         this.menu.toggle();
+    }
+
+    on_applet_removed_from_panel() {
+        this._stopMonitoringCompletely();
+
+        if (this.settings) {
+            this.settings.finalize();
+        }
+    }
+
+    destroy() {
+        this._stopMonitoringCompletely();
+
+        this.actor._delegate = null;
+        this.menu.destroy();
+        this.emit("destroy");
     }
 }
 
