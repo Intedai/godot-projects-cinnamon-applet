@@ -69,7 +69,7 @@ function getProjectName(projectPath, appletName) {
     // Get only the group with project name, and make it KeyFile compatible (kinda hacky but whatever)
     const applicationGroupText = contentsString
         .match(applicationGroupRegex)[1] // Get the brackets only, not including last '['
-        .replace(';', '#'); // Replace comment char from ; to # so KeyFile parsing will work 
+        .replace(';', '#'); // Replace comment char from ; to # so KeyFile parsing will work
 
     let keyFile = new GLib.KeyFile();
     let projectName;

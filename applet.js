@@ -17,6 +17,7 @@ CHECK IF NO MULTIPLE NOTIFS
 1. check variable names inconsistencies like projectFile and projectsFile across both classes and individually inside each class also projectParser.js
 2. fix when u write an unexistant command it just doesn't do anything, maybe use spawnCommandLineAsyncIO instead
 3. async baby
+3.5. change all string addition ("hello" + var) to `hello ${var}`
 4. add switch / option thingy to choose if to use normal or symbolic icon in taskbarr applet icon
 */
 
@@ -85,7 +86,6 @@ class GodotProjects extends Applet.IconApplet {
         super(orientation, panel_height, instance_id);
 
         this.appletName = "Godot Projects";
-        this.set_applet_icon_name("godot-applet-icon");
         this.set_applet_tooltip(_("Project List"));
 
         this.menuManager = new PopupMenu.PopupMenuManager(this);
@@ -109,6 +109,16 @@ class GodotProjects extends Applet.IconApplet {
         this.projectsScrollBox.add_style_class_name("vfade");
         
         this.settings = new Settings.AppletSettings(this, metadata.uuid, this.instance_id)
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "use-monochrome-icon",
+                                   "use_monochrome_icon",
+                                   this.modifyIcon,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "monochrome-icon-color",
+                                   "monochrome_icon_color",
+                                   this.modifyIcon,
+                                   null);
         this.settings.bindProperty(Settings.BindingDirection.IN,
                                    "show-full-path",
                                    "show_full_path",
@@ -161,9 +171,19 @@ class GodotProjects extends Applet.IconApplet {
         // Signal handler ID, used for disconnecting the signal
         this.projects_id = 0;
 
+        this.modifyIcon();
         this.refreshAll();
     }
-
+    modifyIcon() {
+        if (this.use_monochrome_icon) {
+            this.set_applet_icon_symbolic_name("godot-applet-monochrome");
+            this._applet_icon.set_style(`color: ${this.monochrome_icon_color};`);
+        }
+        else {
+            this.set_applet_icon_name("godot-applet");
+            this._applet_icon.set_style("");
+        }
+    }
     _modifyAndMonitorProjectsFile(projectFile) {
         this.projectFile = projectFile
         this._stopMonitoringCompletely();
