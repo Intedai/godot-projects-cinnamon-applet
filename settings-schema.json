@@ -3,6 +3,17 @@
         "type": "header",
         "description": "Godot Projects Applet Settings"    
     },
+    "use-monochrome-icon": {
+        "type": "switch",
+        "default": true,
+        "description": "Use a monochrome icon"
+    },
+    "monochrome-icon-color": {
+        "type": "colorchooser",
+        "default": "white",
+        "dependency": "use-monochrome-icon=true",
+        "description": "Choose a color for the icon"
+    },
     "show-full-path": {
         "type": "switch",
         "default": false,
