@@ -64,31 +64,10 @@ function getProjectName(projectPath, appletName) {
     const decoder = new TextDecoder("utf-8");
     const contentsString = decoder.decode(contents);
 
-    const applicationGroupRegex = /(\[application].+?)\[/s;
+    const projectNameRegex = /\[application].+config\/name="(.+?)"/s;
 
-    // Get only the group with project name, and make it KeyFile compatible (kinda hacky but whatever)
-    const applicationGroupText = contentsString
-        .match(applicationGroupRegex)[1] // Get the brackets only, not including last '['
-        .replace(';', '#'); // Replace comment char from ; to # so KeyFile parsing will work
+    const projectName = contentsString
+        .match(projectNameRegex)[1]
 
-    let keyFile = new GLib.KeyFile();
-    let projectName;
-
-    try {
-        keyFile.load_from_data(applicationGroupText, applicationGroupText.length, GLib.KeyFileFlags.NONE);
-        projectName = keyFile.get_string("application", "config/name");
-    }
-    catch (e) {
-        Main.notifyError(
-            appletName,
-            "Failed to parse projects file: " +
-            projectConfigFile.get_basename() +
-            " try choosing another file in the settings or look at the logs!"
-        );
-        global.logError(e);
-        return null;
-    }
-
-    // Return name without quotation marks
-    return projectName.slice(1, -1);
+    return projectName;
 }
