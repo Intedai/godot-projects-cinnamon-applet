@@ -8,17 +8,14 @@ const Clutter = imports.gi.Clutter;
 const Util = imports.misc.util;
 const Main = imports.ui.main;
 
-const ProjectParser = require("./projectParser");
+const ProjectParser = require("./projects");
 
 /*
 TODO:
 REMINDER: do cinnamon --replace to view better errors!
 CHECK IF NO MULTIPLE NOTIFS
 1. check variable names inconsistencies like projectFile and projectsFile across both classes and individually inside each class also projectParser.js
-2. fix when u write an unexistant command it just doesn't do anything, maybe use spawnCommandLineAsyncIO instead
-3. async baby
-3.5. change all string addition ("hello" + var) to `hello ${var}`
-4. add switch / option thingy to choose if to use normal or symbolic icon in taskbarr applet icon
+2. async baby
 */
 
 class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
@@ -115,11 +112,6 @@ class GodotProjects extends Applet.IconApplet {
                                    this.modifyIcon,
                                    null);
         this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "monochrome-icon-color",
-                                   "monochrome_icon_color",
-                                   this.modifyIcon,
-                                   null);
-        this.settings.bindProperty(Settings.BindingDirection.IN,
                                    "show-full-path",
                                    "show_full_path",
                                    this.refreshProjects,
@@ -174,16 +166,16 @@ class GodotProjects extends Applet.IconApplet {
         this.modifyIcon();
         this.refreshAll();
     }
+
     modifyIcon() {
         if (this.use_monochrome_icon) {
             this.set_applet_icon_symbolic_name("godot-applet-monochrome");
-            this._applet_icon.set_style(`color: ${this.monochrome_icon_color};`);
         }
         else {
             this.set_applet_icon_name("godot-applet");
-            this._applet_icon.set_style("");
         }
     }
+
     _modifyAndMonitorProjectsFile(projectFile) {
         this.projectFile = projectFile
         this._stopMonitoringCompletely();
@@ -308,18 +300,22 @@ class GodotProjects extends Applet.IconApplet {
                 );
                 
                 button.connect("activate", (button, event)=> {
-                    global.log("yolobutn");
                     let command_arr = this.godot_command + " " + this.godot_flags + " " + project;
-                    Util.spawnCommandLineAsync(
-                        command_arr, null, () => {
-                            Main.notifyError(
-                                this.appletName,
-                                "Couldn't execute: " +
-                                this.godot_command +
-                                " try changing it in the settings!"
-                            );
-                        }
-                    );
+                    try {
+                        Util.spawnCommandLineAsync(
+                            command_arr, null, () => {
+                                Main.notifyError(
+                                    this.appletName,
+                                    "Couldn't execute: " +
+                                    this.godot_command +
+                                    " try changing it in the settings!"
+                                );
+                            }
+                        );
+                    }
+                    catch {
+                        Main.notifyError(this.appletName, `The command "${this.godot_command}" does not exist!`);
+                    }
                     this.menu.toggle();
                 });
         
