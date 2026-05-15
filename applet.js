@@ -10,11 +10,6 @@ const Main = imports.ui.main;
 
 const ProjectParser = require("./projects");
 
-/*
-TODO:
-1. Try to make it more asynchronous
-*/
-
 class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
     constructor(projectPath, isFavorite, showIcon, showPath, params) {
         super(params);
@@ -79,7 +74,7 @@ class GodotProjects extends Applet.IconApplet {
     constructor(metadata, orientation, panel_height, instance_id) {
         super(orientation, panel_height, instance_id);
 
-        this.appletName = "Godot Projects";
+        this.appletName = _("Godot Projects");
         this.set_applet_tooltip(_("Project List"));
 
         this.menuManager = new PopupMenu.PopupMenuManager(this);
@@ -179,13 +174,13 @@ class GodotProjects extends Applet.IconApplet {
         
         // Shouldn't happen but just incase
         if (!this.projectsFile.query_exists(null)){
-            let msg = "Couldn't monitor projects file because it doesn't exist, please modify the applet's config or look at the logs!";
+            let msg = _("Could not monitor projects file because it does not exist, please modify the applet's config or look at the logs!");
             Main.notifyError(this.appletName, msg)
-            global.logError(
-                this.appletName +
-                ": File " +
-                this.projectsFile.path() +
-                " doesn't exist!"
+            global.logError(_("%s: file %s does not exist!")
+                .format(
+                    this.appletName,
+                    this.projectsFile.path()
+                )
             );
             this.showProjectsInPopup = false;
             this.badMessage(msg);
@@ -228,7 +223,7 @@ class GodotProjects extends Applet.IconApplet {
                 this.projectsFile = null;
                 this.showProjectsInPopup = false;
                 this._stopMonitoringCompletely();
-                let msg = "File must be named " + this.projectsFileName + ", choose another file!";
+                let msg = _("File must be named %s, choose another file!").format(this.projectsFileName);
                 Main.notify(this.appletName, msg);
                 this.badMessage(msg);
             }
@@ -237,19 +232,19 @@ class GodotProjects extends Applet.IconApplet {
         else if (this.custom_projects_path) {
             this.projectsFile = null;
             this.showProjectsInPopup = false;
-            this.badMessage("Please select a file in the settings!");
+            this.badMessage(_("Please select a file in the settings!"));
             this._stopMonitoringCompletely();
         }
         else if (this.defaultProjectsFile.query_exists(null)){
             this._modifyAndMonitorProjectsFile(this.defaultProjectsFile);
         }
-        // Couldn't find the default file
+        // Could not find the default file
         else {
             this.projectsFile = null;
             this.showProjectsInPopup = false;
             this._stopMonitoringCompletely();
 
-            let msg = "Couldn't find the default projects.cfg file, choose a file in the settings!";
+            let msg = _("Could not find the default projects.cfg file, choose a file in the settings!");
 
             Main.notify(this.appletName, msg);
             this.badMessage(msg);
@@ -265,7 +260,7 @@ class GodotProjects extends Applet.IconApplet {
         
         if (!projects) {
             this.showProjectsInPopup = false;
-            this.badMessage("Failed to parse projects file!");
+            this.badMessage(_("Failed to parse projects file!"));
             return;
         }
         else if (
@@ -276,7 +271,7 @@ class GodotProjects extends Applet.IconApplet {
                 Not disabling this.showProjectsInPopup because the file
                 was parsed successfully, just no project exists yet!
             */
-            this.badMessage("You don't have any projects yet.");
+            this.badMessage(_("You do not have any projects yet."));
             return;
         }
 
@@ -303,17 +298,14 @@ class GodotProjects extends Applet.IconApplet {
                             command_arr, null, () => {
                                 Main.notifyError(
                                     this.appletName,
-                                    "Couldn't execute: \"" +
-                                    this.godot_command +
-                                    " " +
-                                    this.godot_flags +
-                                    "\", try changing it in the settings!"
+                                    _("Could not execute: \"%s %s\", try changing it in the settings!")
+                                        .format(this.godot_command, this.godot_flags)
                                 );
                             }
                         );
                     }
                     catch {
-                        Main.notifyError(this.appletName, `The command "${this.godot_command}" does not exist, try changing it in the settings!`);
+                        Main.notifyError(this.appletName, _("The command \"%s\" does not exist, try changing it in the settings!").format(this.godot_command));
                     }
                     this.menu.toggle();
                 });

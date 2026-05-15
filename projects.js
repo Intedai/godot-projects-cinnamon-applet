@@ -2,12 +2,11 @@ const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 const Main = imports.ui.main;
 
-// TODO: Maybe take file instead, since i create in ctor for monitoring
 function getProjectList(projectsFile, appletName) {
     if (!projectsFile.query_exists(null)){
-        let msg = "Path for projects config file doesn't exist!: " + path;
+        let msg = _("Projects file does not exist, try choosing another one!");
         Main.notifyError(appletName, msg);
-        global.logError(appletName + ": " + msg);
+        global.logError("%s: %s".format(appletName, msg));
         return null;
     }
     
@@ -37,9 +36,8 @@ function getProjectList(projectsFile, appletName) {
 
         Main.notifyError(
             appletName,
-            "Failed to parse projects file: " +
-            projectsFile.get_basename() +
-            " try choosing another file in the settings or look at the logs!"
+            _("Failed to parse projects file: %s. Try choosing another file in the settings or look at the logs!")
+                .format(projectsFile.get_basename())
         );
         global.logError(e);
         return null;
@@ -55,7 +53,7 @@ function getProjectName(projectPath, appletName) {
 
     if (!projectConfigFile.query_exists(null)){
         // Not notifying to avoid annoying spam
-        global.log(appletName + ": Couldn't fetch project name for " + projectPath);
+        global.log(_("%s: Could not fetch project name for %s").format(appletName ,projectPath));
         return null;
     }
 
