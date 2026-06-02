@@ -70,6 +70,23 @@ class badMessageMenuItem extends PopupMenu.PopupBaseMenuItem {
     }
 }
 
+class launchGodotButton extends PopupMenu.PopupBaseMenuItem {
+    constructor(bg_color, fg_color, params) {
+        super(params);
+
+        this.actor.set_style(
+            `background: ${bg_color}; color: ${fg_color}; font-family: monospace; font-weight: bold;`
+        );
+        
+        let label = new St.Label({
+            text: _("Launch Godot"),
+            y_align: Clutter.ActorAlign.CENTER
+        });
+
+        this.addActor(label);
+    }
+}
+
 class GodotProjects extends Applet.IconApplet {
     constructor(metadata, orientation, panel_height, instance_id) {
         super(orientation, panel_height, instance_id);
@@ -111,6 +128,21 @@ class GodotProjects extends Applet.IconApplet {
         this.settings.bindProperty(Settings.BindingDirection.IN,
                                    "show-star-icons",
                                    "show_star_icons",
+                                   this.refreshProjects,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "add-launch-godot",
+                                   "add_launch_godot",
+                                   this.refreshProjects,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "launch-godot-fg-color",
+                                   "launch_godot_fg_color",
+                                   this.refreshProjects,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "launch-godot-bg-color",
+                                   "launch_godot_bg_color",
                                    this.refreshProjects,
                                    null);
         this.settings.bindProperty(Settings.BindingDirection.IN,
@@ -183,7 +215,7 @@ class GodotProjects extends Applet.IconApplet {
                 )
             );
             this.showProjectsInPopup = false;
-            this.badMessage(msg);
+            this.errorMessage(msg);
             return;
         }
         
@@ -220,6 +252,33 @@ class GodotProjects extends Applet.IconApplet {
         this.menuBox.add_child(button.actor);
     }
 
+    _connectButtonToCommand(button, command, flags = "", file = "") {
+        button.connect("activate", (button, event)=> {
+            let command_arr = [command, flags, file].join(" ");
+            try {
+                Util.spawnCommandLineAsync(
+                    command_arr, null, () => {
+                        Main.notifyError(
+                            this.appletName,
+                            _("Could not execute: \"%s\", try changing it in the settings!")
+                                .format([command, flags].join(" "))
+                        );
+                    }
+                );
+            }
+            catch {
+                Main.notifyError(this.appletName, _("The command \"%s\" does not exist, try changing it in the settings!").format(command));
+            }
+            this.menu.toggle();
+        });
+    }
+
+    addLaunchGodotButton() {
+        let launchButton = new launchGodotButton(this.launch_godot_bg_color, this.launch_godot_fg_color);
+        this._connectButtonToCommand(launchButton, this.godot_command);
+        this._addItemToMenu(launchButton);
+    }
+
     refreshProjectsFile() {
         this.showProjectsInPopup = true;
 
@@ -237,14 +296,14 @@ class GodotProjects extends Applet.IconApplet {
                 this._stopMonitoringCompletely();
                 let msg = _("File must be named %s, choose another file!").format(this.projectsFileName);
                 Main.notify(this.appletName, msg);
-                this.badMessage(msg);
+                this.errorMessage(msg);
             }
         }
         // Switched on but no file chosen
         else if (this.custom_projects_path) {
             this.projectsFile = null;
             this.showProjectsInPopup = false;
-            this.badMessage(_("Please select a file in the settings!"));
+            this.errorMessage(_("Please select a file in the settings!"));
             this._stopMonitoringCompletely();
         }
         else if (this.defaultProjectsFile.query_exists(null)){
@@ -259,7 +318,7 @@ class GodotProjects extends Applet.IconApplet {
             let msg = _("Could not find the default projects.cfg file, choose a file in the settings!");
 
             Main.notify(this.appletName, msg);
-            this.badMessage(msg);
+            this.errorMessage(msg);
         }
     }
 
@@ -272,7 +331,7 @@ class GodotProjects extends Applet.IconApplet {
         
         if (!projects) {
             this.showProjectsInPopup = false;
-            this.badMessage(_("Failed to parse projects file!"));
+            this.errorMessage(_("Failed to parse projects file!"));
             return;
         }
         else if (
@@ -283,11 +342,22 @@ class GodotProjects extends Applet.IconApplet {
                 Not disabling this.showProjectsInPopup because the file
                 was parsed successfully, just no project exists yet!
             */
-            this.badMessage(_("You do not have any projects yet."));
+            this._removeAllProjectButtons();
+            
+            if (this.add_launch_godot) {
+                this.addLaunchGodotButton();
+            }
+
+            this.addBadMessage(_("You do not have any projects yet."));
+
             return;
         }
 
         this._removeAllProjectButtons();
+
+        if (this.add_launch_godot) {
+            this.addLaunchGodotButton()
+        }
 
         for (const key of ["favorites", "nonFavorites"]) {
             const isFavorite = key == "favorites";
@@ -299,36 +369,21 @@ class GodotProjects extends Applet.IconApplet {
                     this.show_full_path
                 );
                 
-                button.connect("activate", (button, event)=> {
-                    let command_arr = this.godot_command + " " + this.godot_flags + " " + project;
-                    try {
-                        Util.spawnCommandLineAsync(
-                            command_arr, null, () => {
-                                Main.notifyError(
-                                    this.appletName,
-                                    _("Could not execute: \"%s %s\", try changing it in the settings!")
-                                        .format(this.godot_command, this.godot_flags)
-                                );
-                            }
-                        );
-                    }
-                    catch {
-                        Main.notifyError(this.appletName, _("The command \"%s\" does not exist, try changing it in the settings!").format(this.godot_command));
-                    }
-                    this.menu.toggle();
-                });
-        
+                this._connectButtonToCommand(button, this.godot_command, this.godot_flags, project)       
+                
                 this._addItemToMenu(button)
             }
         }
     }
 
-    badMessage(displayText) {
-        this._removeAllProjectButtons();
-        
+    addBadMessage(displayText) {
         let badMessageItem = new badMessageMenuItem(displayText);
-
         this._addItemToMenu(badMessageItem);
+    }
+
+    errorMessage(displayText) {
+        this._removeAllProjectButtons();
+        addBadMessage(displayText);
     }
 
     refreshAll() {
