@@ -208,6 +208,18 @@ class GodotProjects extends Applet.IconApplet {
         }
     }
 
+    _removeAllProjectButtons() {
+        for (let projectButton of this.MenuItems) {
+            projectButton.destroy();
+        }
+        this.MenuItems = [];
+    }
+
+    _addItemToMenu(button) {
+        this.MenuItems.push(button);
+        this.menuBox.add_child(button.actor);
+    }
+
     refreshProjectsFile() {
         this.showProjectsInPopup = true;
 
@@ -275,11 +287,7 @@ class GodotProjects extends Applet.IconApplet {
             return;
         }
 
-        for (let projectButton of this.MenuItems) {
-            projectButton.destroy();
-        }
-        this.MenuItems = [];
-
+        this._removeAllProjectButtons();
 
         for (const key of ["favorites", "nonFavorites"]) {
             const isFavorite = key == "favorites";
@@ -310,22 +318,17 @@ class GodotProjects extends Applet.IconApplet {
                     this.menu.toggle();
                 });
         
-                this.MenuItems.push(button);
-                this.menuBox.add_child(button.actor);
+                this._addItemToMenu(button)
             }
         }
     }
 
     badMessage(displayText) {
-        for (let projectButton of this.MenuItems) {
-            projectButton.destroy();
-        }
-        this.MenuItems = [];
+        this._removeAllProjectButtons();
         
         let badMessageItem = new badMessageMenuItem(displayText);
 
-        this.MenuItems.push(badMessageItem);
-        this.menuBox.add_child(badMessageItem.actor);
+        this._addItemToMenu(badMessageItem);
     }
 
     refreshAll() {
