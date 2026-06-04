@@ -9,7 +9,6 @@ const Util = imports.misc.util;
 const Main = imports.ui.main;
 
 // TODO:
-// Fix lag when choosing custom projects.cfg file
 // Figure out what to do with the monochrome logo: set_applet_icon_symbolic_name makes the size different, either figure out how to make it use the theme's color, custom color (which didnt work before) or change it to set_applet_icon_name
 const ProjectParser = require("./projects");
 
@@ -386,7 +385,7 @@ class GodotProjects extends Applet.IconApplet {
 
     errorMessage(displayText) {
         this._removeAllProjectButtons();
-        addBadMessage(displayText);
+        this.addBadMessage(displayText);
     }
 
     refreshAll() {
