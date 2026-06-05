@@ -3,10 +3,39 @@
         "type": "header",
         "description": "Godot Projects Applet Settings"    
     },
-    "use-monochrome-icon": {
+    "add-launch-godot": {
         "type": "switch",
         "default": true,
-        "description": "Use a monochrome icon"
+        "description": "Add a button that launches Godot"
+    },
+    "launch-godot-fg-color": {
+        "type": "colorchooser",
+        "default": "white",
+        "dependency": "add-launch-godot",
+        "description": "Choose a text color for the launch button"
+    },
+    "launch-godot-bg-color": {
+        "type": "colorchooser",
+        "default": "#097fd6",
+        "dependency": "add-launch-godot",
+        "description": "Choose a background color for the launch button"
+    },
+    "use-symbolic-icon": {
+        "type": "switch",
+        "default": true,
+        "description": "Use a symbolic icon"
+    },
+    "use-symbolic-icon-custom-color": {
+        "type": "switch",
+        "default": false,
+        "dependency": "use-symbolic-icon=true",
+        "description": "Use a custom color for the symbolic icon"
+    },
+    "symbolic-icon-color": {
+        "type": "colorchooser",
+        "default": "#097fd6",
+        "dependency": "use-symbolic-icon",
+        "description": "Choose a color for the symbolic icon"
     },
     "show-full-path": {
         "type": "switch",
@@ -17,23 +46,6 @@
         "type": "switch",
         "default": true,
         "description": "Show star icons near every project"
-    },
-    "add-launch-godot": {
-        "type": "switch",
-        "default": false,
-        "description": "Add a button that launches Godot"
-    },
-    "launch-godot-fg-color": {
-        "type": "colorchooser",
-        "default": "white",
-        "dependency": "add-launch-godot=true",
-        "description": "Choose a text color for the launch button"
-    },
-    "launch-godot-bg-color": {
-        "type": "colorchooser",
-        "default": "#097fd6",
-        "dependency": "add-launch-godot=true",
-        "description": "Choose a background color for the launch button"
     },
     "godot-command": {
         "type": "entry",
@@ -55,7 +67,7 @@
     "projects-file-uri": {
         "type": "filechooser",
         "default": "",
-        "dependency": "custom-projects-path=true",
+        "dependency": "custom-projects-path",
         "description": "Choose your projects.cfg file",
         "tooltip": "Usually ~/.local/share/godot/project.cfg or for flatpak ~/.var/app/org.godotengine.Godot/data/godot"
     }

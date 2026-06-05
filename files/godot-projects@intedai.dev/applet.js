@@ -8,8 +8,6 @@ const Clutter = imports.gi.Clutter;
 const Util = imports.misc.util;
 const Main = imports.ui.main;
 
-// TODO:
-// Figure out what to do with the monochrome logo: set_applet_icon_symbolic_name makes the size different, either figure out how to make it use the theme's color, custom color (which didnt work before) or change it to set_applet_icon_name
 const ProjectParser = require("./projects");
 
 class ProjectMenuItem extends PopupMenu.PopupBaseMenuItem {
@@ -118,21 +116,6 @@ class GodotProjects extends Applet.IconApplet {
         
         this.settings = new Settings.AppletSettings(this, metadata.uuid, this.instance_id)
         this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "use-monochrome-icon",
-                                   "use_monochrome_icon",
-                                   this.modifyIcon,
-                                   null);
-        this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "show-full-path",
-                                   "show_full_path",
-                                   this.refreshProjects,
-                                   null);
-        this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "show-star-icons",
-                                   "show_star_icons",
-                                   this.refreshProjects,
-                                   null);
-        this.settings.bindProperty(Settings.BindingDirection.IN,
                                    "add-launch-godot",
                                    "add_launch_godot",
                                    this.refreshProjects,
@@ -145,6 +128,31 @@ class GodotProjects extends Applet.IconApplet {
         this.settings.bindProperty(Settings.BindingDirection.IN,
                                    "launch-godot-bg-color",
                                    "launch_godot_bg_color",
+                                   this.refreshProjects,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "use-symbolic-icon",
+                                   "use_symbolic_icon",
+                                   this.modifyIcon,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "use-symbolic-icon-custom-color",
+                                   "use_symbolic_icon_custom_color",
+                                   this.modifyIcon,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "symbolic-icon-color",
+                                   "symbolic_icon_color",
+                                   this.modifyIcon,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "show-full-path",
+                                   "show_full_path",
+                                   this.refreshProjects,
+                                   null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "show-star-icons",
+                                   "show_star_icons",
                                    this.refreshProjects,
                                    null);
         this.settings.bindProperty(Settings.BindingDirection.IN,
@@ -194,11 +202,19 @@ class GodotProjects extends Applet.IconApplet {
     }
 
     modifyIcon() {
-        if (this.use_monochrome_icon) {
-            this.set_applet_icon_symbolic_name("godot-applet-monochrome");
+        if (this.use_symbolic_icon) {
+            this.set_applet_icon_symbolic_name("godot-applet-symbolic");
+            if (this.use_symbolic_icon_custom_color) {
+                this._applet_icon.set_style(`color: ${this.symbolic_icon_color};`);
+            }
+            else {
+                this._applet_icon.set_style("");
+                this.use_symbolic_icon_custom_color = false;
+            }
         }
         else {
             this.set_applet_icon_name("godot-applet");
+            this._applet_icon.set_style("");
         }
     }
 
