@@ -158,12 +158,12 @@ class GodotProjects extends Applet.IconApplet {
         this.settings.bindProperty(Settings.BindingDirection.IN,
                                    "godot-command",
                                    "godot_command",
-                                   null,
+                                   this.refreshProjects,
                                    null);
         this.settings.bindProperty(Settings.BindingDirection.IN,
                                    "godot-flags",
                                    "godot_flags",
-                                   null,
+                                   this.refreshProjects,
                                    null);
         this.settings.bindProperty(Settings.BindingDirection.IN,
                                    "custom-projects-path",
